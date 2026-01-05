@@ -9,6 +9,8 @@ import com.ra.demo.service.UploadFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,7 +37,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public BookResponse save(BookDTO bookDTO){
+    public BookResponse save(BookDTO bookDTO) {
         String fileName = uploadFileService.uploadFile(bookDTO.getImg());
 
         Book book = Book.builder()
@@ -59,8 +61,8 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    public Page<BookResponse> searchBookByTitleOrContent(String keyword,Pageable pageable){
-        Page<Book> books = bookRepository.findByTitleContainingIgnoreCase(keyword,pageable);
+    public Page<BookResponse> searchBookByTitleOrContent(String keyword, Pageable pageable) {
+        Page<Book> books = bookRepository.findByTitleContainingIgnoreCase(keyword, pageable);
         return books.map(book ->
                 BookResponse.builder()
                         .book_id(book.getBook_id())
@@ -73,4 +75,54 @@ public class BookServiceImpl implements BookService {
                         .build());
     }
 
+    @Override
+    public Book findById(long id) {
+        return bookRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public ResponseEntity<String> deleteById(long id) {
+        Book book = findById(id);
+
+        if (book != null) {
+            try {
+                bookRepository.delete(book);
+                return new ResponseEntity<>("Delete successfully", HttpStatus.OK);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return new ResponseEntity<>("Delete failed", HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            return new ResponseEntity<>("Service not found", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public Book updateBook(Long id, BookDTO bookDTO) {
+        Book oldBook = findById(id);
+
+        if (oldBook != null) {
+            Book newBook = new Book();
+            newBook.setTitle(bookDTO.getTitle());
+            newBook.setAuthor(bookDTO.getAuthor());
+            newBook.setQuantity(bookDTO.getQuantity());
+            newBook.setPrice(bookDTO.getPrice());
+            newBook.setStatus(bookDTO.getStatus());
+            newBook.setBook_id(id);
+
+            if (!bookDTO.getImg().isEmpty() || bookDTO.getImg().getSize() > 0) {
+               newBook.setImg(uploadFileService.uploadFile(bookDTO.getImg()));
+            } else {
+                newBook.setImg(oldBook.getImg());
+            }
+            try {
+                return bookRepository.save(newBook);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            return null;
+        }
+    }
 }

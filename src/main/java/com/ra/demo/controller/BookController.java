@@ -3,16 +3,20 @@ package com.ra.demo.controller;
 import com.ra.demo.model.dto.ResponseWrapper;
 import com.ra.demo.model.dto.request.BookDTO;
 import com.ra.demo.model.dto.response.BookResponse;
+import com.ra.demo.model.entity.Book;
 import com.ra.demo.service.BookService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("api/books")
@@ -68,6 +72,22 @@ public class BookController {
                         .dataResponse(bookResponse)
                         .build()
         );
+    }
+
+    @PutMapping( "/edit/{id}")
+    public ResponseEntity<?> editBook(@PathVariable long id,
+                                      @Valid @ModelAttribute BookDTO bookDTO){
+        Book book = bookService.updateBook(id,bookDTO);
+        if(book != null){
+            return new ResponseEntity<>(book, HttpStatus.OK);
+        }else {
+            return new ResponseEntity<>("Update faile",HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteBook(@PathVariable long id) {
+        return new ResponseEntity<>(bookService.deleteById(id),HttpStatus.OK);
     }
 
 }
